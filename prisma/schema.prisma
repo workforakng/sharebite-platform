@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String     @id @default(cuid())
+  name      String
+  email     String     @unique
+  password  String
+  role      Role       @default(DONOR)
+  phone     String?
+  createdAt DateTime   @default(now())
+  donations Donation[] @relation("DonorDonations")
+  claims    Donation[] @relation("ClaimedDonations")
+}
+
+model Donation {
+  id          String         @id @default(cuid())
+  title       String
+  type        String
+  quantity    String
+  expires     DateTime
+  pickupStart DateTime?
+  pickupEnd   DateTime?
+  location    String
+  notes       String?
+  status      DonationStatus @default(AVAILABLE)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  donorId     String
+  claimerId   String?
+
+  donor       User           @relation("DonorDonations", fields: [donorId], references: [id])
+  claimer     User?          @relation("ClaimedDonations", fields: [claimerId], references: [id])
+}
+
+enum Role {
+  DONOR
+  NGO
+  VOLUNTEER
+  ADMIN
+}
+
+enum DonationStatus {
+  AVAILABLE
+  CLAIMED
+  COLLECTED
+  CANCELLED
+}
