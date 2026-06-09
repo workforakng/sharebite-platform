@@ -18,7 +18,7 @@ export default function Navbar() {
         </Link>
         
         <nav className="flex gap-4 md:gap-8 items-center">
-          <Link href="/dashboard" className="text-[#6b6248] font-bold text-sm hover:text-[#4a6741] transition-colors uppercase tracking-widest">Feed</Link>
+          <Link href="/dashboard" className="text-[#6b6248] font-bold text-sm hover:text-[#4a6741] transition-colors uppercase tracking-widest animate-feed-glow">Feed</Link>
           <Link href="/history" className="text-[#6b6248] font-bold text-sm hover:text-[#4a6741] transition-colors uppercase tracking-widest">History</Link>
           
           {session ? (

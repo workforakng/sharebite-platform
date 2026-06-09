@@ -4,3 +4,13 @@
 
 html { scroll-behavior: smooth; }
 body { background-color: #faf9f6; }
+
+@keyframes feed-glow {
+  0% { text-shadow: 0 0 5px rgba(74, 103, 65, 0.2); transform: scale(1); }
+  50% { text-shadow: 0 0 15px rgba(74, 103, 65, 0.6), 0 0 20px rgba(74, 103, 65, 0.4); transform: scale(1.05); color: #4a6741; }
+  100% { text-shadow: 0 0 5px rgba(74, 103, 65, 0.2); transform: scale(1); }
+}
+
+.animate-feed-glow {
+  animation: feed-glow 2s ease-in-out infinite;
+}
