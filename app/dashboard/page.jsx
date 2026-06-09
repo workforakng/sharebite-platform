@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { MapPin, Clock, Package, User, CheckCircle2, Navigation, Edit2, Trash2, X } from 'lucide-react';
+import { MapPin, Clock, Package, User, CheckCircle2, Navigation, Edit2, Trash2, X, ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Dashboard() {
@@ -11,6 +11,10 @@ export default function Dashboard() {
   const [filter, setFilter] = useState('ALL'); // ALL, MY_CLAIMS, MY_DONATIONS
   const [editingDonation, setEditingDonation] = useState(null);
   const [updating, setUpdating] = useState(false);
+  
+  // Rescue confirmation state
+  const [showRescueModal, setShowRescueModal] = useState(null); // stores donation ID
+  const [qualityChecked, setQualityChecked] = useState(false);
 
   const isAdmin = session?.user?.role === 'ADMIN';
 
@@ -28,15 +32,17 @@ export default function Dashboard() {
 
   useEffect(() => { loadDonations(); }, []);
 
-  const handleClaim = async (id) => {
-    if (!session) return alert('Please login to claim food.');
-    if (!confirm('Commit to collecting this donation? We rely on your commitment to prevent waste.')) return;
-
+  const handleClaim = async () => {
+    if (!qualityChecked) return alert('Please confirm you will verify the food quality.');
+    const id = showRescueModal;
+    
     const res = await fetch(`/api/donations/${id}/claim`, { method: 'POST' });
     if (!res.ok) {
       const data = await res.json();
       alert(data.error);
     } else {
+      setShowRescueModal(null);
+      setQualityChecked(false);
       loadDonations();
     }
   };
@@ -76,8 +82,8 @@ export default function Dashboard() {
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
         <div>
-          <h1 className="text-4xl font-serif font-extrabold text-[#27210f] tracking-tight">Live Rescue Feed</h1>
-          <p className="text-[#6b6248] mt-2 font-medium">Real-time surplus food availability supporting SDG 2: Zero Hunger.</p>
+          <h1 className="text-4xl font-serif font-extrabold text-[#27210f] tracking-tight text-center md:text-left">Live Rescue Feed</h1>
+          <p className="text-[#6b6248] mt-2 font-medium text-center md:text-left">Real-time surplus food availability supporting SDG 2: Zero Hunger.</p>
         </div>
 
         <div className="flex flex-wrap gap-2 bg-[#ede9df] p-1.5 rounded-2xl w-full md:w-auto shadow-inner border border-[#d5cfbf]">
@@ -94,7 +100,7 @@ export default function Dashboard() {
       {loading ? (
         <div className="text-center py-32">
            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#4a6741] border-r-transparent align-[-0.125em]" role="status"></div>
-           <p className="mt-4 text-[#a89f88] font-serif italic text-xl">Scanning for available rescues...</p>
+           <p className="mt-4 text-[#a89f88] font-serif italic text-xl text-center">Scanning for available rescues...</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -153,7 +159,7 @@ export default function Dashboard() {
 
               <div className="flex gap-3 mt-auto">
                 {d.status === 'AVAILABLE' && (session?.user?.id !== d.donorId) && (
-                  <button onClick={() => handleClaim(d.id)} className="flex-grow flex items-center justify-center gap-2 bg-[#27210f] text-white py-4 rounded-2xl font-bold hover:bg-[#4a6741] transition-all transform active:scale-95 shadow-md">
+                  <button onClick={() => setShowRescueModal(d.id)} className="flex-grow flex items-center justify-center gap-2 bg-[#27210f] text-white py-4 rounded-2xl font-bold hover:bg-[#4a6741] transition-all transform active:scale-95 shadow-md">
                     <CheckCircle2 className="w-5 h-5" />
                     Commit to Rescue
                   </button>
@@ -183,25 +189,54 @@ export default function Dashboard() {
           {filtered.length === 0 && (
              <div className="col-span-full py-32 text-center border-4 border-dashed border-[#ede9df] rounded-[3rem] bg-[#faf9f5]">
                <div className="text-6xl mb-6">🌏</div>
-               <h3 className="text-2xl font-serif font-bold text-[#27210f] mb-3">No results matching your criteria</h3>
-               <p className="text-[#6b6248] max-w-sm mx-auto">Check back soon! Every listing on ShareBite brings us closer to a world with Zero Hunger.</p>
+               <h3 className="text-2xl font-serif font-bold text-[#27210f] mb-3 text-center">No results matching your criteria</h3>
+               <p className="text-[#6b6248] max-w-sm mx-auto text-center">Check back soon! Every listing on ShareBite brings us closer to a world with Zero Hunger.</p>
                {filter !== 'ALL' && <button onClick={() => setFilter('ALL')} className="mt-8 text-[#4a6741] font-bold underline">Show all available rescues</button>}
              </div>
           )}
         </div>
       )}
 
+      {/* --- RESCUE CONFIRMATION MODAL --- */}
+      {showRescueModal && (
+         <div className="fixed inset-0 bg-[#1c1a16]/80 backdrop-blur-md z-[110] flex items-center justify-center p-4">
+            <div className="bg-white rounded-[2.5rem] w-full max-w-lg p-8 md:p-12 shadow-2xl border border-[#ede9df] animate-in zoom-in duration-200">
+               <div className="flex justify-center mb-6">
+                  <div className="bg-orange-50 text-[#c07a13] p-4 rounded-full">
+                     <ShieldAlert className="w-12 h-12" />
+                  </div>
+               </div>
+               <h3 className="text-3xl font-serif font-bold text-[#27210f] text-center mb-4">Safety Verification</h3>
+               <p className="text-[#6b6248] text-center mb-8 leading-relaxed">
+                  ShareBite is a connection platform only. By committing, you agree to <strong>verify the food quality, smell, and appearance yourself</strong> at the time of pickup. 
+                  <br/><br/>
+                  Rescued food is collected at your own risk.
+               </p>
+               
+               <label className="flex items-start gap-3 bg-[#faf9f5] p-5 rounded-2xl border border-[#ede9df] mb-8 cursor-pointer group hover:border-[#c07a13] transition-colors">
+                  <input type="checkbox" checked={qualityChecked} onChange={e => setQualityChecked(e.target.checked)} className="mt-1.5 h-5 w-5 rounded border-gray-300 text-[#c07a13] focus:ring-[#c07a13]" />
+                  <span className="text-sm font-bold text-[#27210f] select-none">I understand and will verify the food quality myself.</span>
+               </label>
+
+               <div className="flex gap-3">
+                  <button onClick={() => {setShowRescueModal(null); setQualityChecked(false);}} className="flex-1 py-4 font-bold text-[#a89f88] hover:text-[#27210f] transition-colors">Cancel</button>
+                  <button onClick={handleClaim} disabled={!qualityChecked} className="flex-[2] bg-[#27210f] text-white py-4 rounded-2xl font-bold hover:bg-[#4a6741] transition-all disabled:opacity-30 shadow-lg">Confirm & Commit</button>
+               </div>
+            </div>
+         </div>
+      )}
+
       {/* --- EDIT MODAL --- */}
       {editingDonation && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 overflow-y-auto">
-           <div className="bg-white rounded-[2.5rem] w-full max-w-2xl p-8 md:p-12 relative animate-in fade-in zoom-in duration-200">
+           <div className="bg-white rounded-[2.5rem] w-full max-w-2xl p-8 md:p-12 relative animate-in fade-in zoom-in duration-200 shadow-2xl">
               <button onClick={() => setEditingDonation(null)} className="absolute top-8 right-8 p-2 hover:bg-[#f5f2eb] rounded-full transition-colors">
                 <X className="w-6 h-6 text-[#a89f88]" />
               </button>
               
-              <h2 className="text-3xl font-serif font-bold text-[#27210f] mb-8">Edit Listing</h2>
+              <h2 className="text-3xl font-serif font-bold text-[#27210f] mb-8 text-center md:text-left">Edit Listing</h2>
               
-              <form onSubmit={handleUpdate} className="space-y-6">
+              <form onSubmit={handleUpdate} className="space-y-6 text-left">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="md:col-span-2">
                     <label className="block text-xs font-bold uppercase tracking-widest text-[#a89f88] mb-2">Title</label>

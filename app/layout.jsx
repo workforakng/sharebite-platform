@@ -2,6 +2,7 @@ import { Inter, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 import AuthProvider from "./components/AuthProvider";
 import Navbar from "./components/Navbar";
+import Link from "next/link";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const instrument = Instrument_Serif({ 
@@ -41,9 +42,9 @@ export default function RootLayout({ children }) {
                   <div>
                     <h5 className="text-white font-bold mb-4 uppercase tracking-widest text-xs">Quick Links</h5>
                     <ul className="space-y-2 text-sm text-[#877d68]">
-                      <li><a href="/dashboard" className="hover:text-[#7dab6e] transition">Rescue Feed</a></li>
-                      <li><a href="/donate" className="hover:text-[#7dab6e] transition">List Food</a></li>
-                      <li><a href="/register" className="hover:text-[#7dab6e] transition">Join Movement</a></li>
+                      <li><Link href="/dashboard" className="hover:text-[#7dab6e] transition">Rescue Feed</Link></li>
+                      <li><Link href="/donate" className="hover:text-[#7dab6e] transition">List Food</Link></li>
+                      <li><Link href="/terms" className="hover:text-[#7dab6e] transition font-bold">Terms & Conditions</Link></li>
                     </ul>
                   </div>
                   <div>
@@ -53,7 +54,7 @@ export default function RootLayout({ children }) {
                 </div>
                 <div className="border-t border-[#38352e] pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-[#5e5748]">
                   <p>© 2026 ShareBite Platform. All rights reserved.</p>
-                  <p className="font-medium tracking-wide">
+                  <p className="font-medium tracking-wide text-center md:text-right">
                     Made with ❤️ by <span className="text-[#7dab6e]">AkNG</span> · 
                     GitHub <a href="https://github.com/workforakng" className="text-white hover:underline">@workforakng</a>
                   </p>
