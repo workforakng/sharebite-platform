@@ -1,4 +1,4 @@
-import { callAI } from '@/lib/ai';
+import { callAI } from '../../../lib/ai';
 import { NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next";
 
