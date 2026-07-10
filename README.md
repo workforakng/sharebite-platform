@@ -2,7 +2,7 @@
 
 **🚀 Live Production:** [https://sharebite-platform.vercel.app](https://sharebite-platform.vercel.app)
 
-ShareBite AI Rescue Assistant is an upgraded, intelligent food rescue ecosystem built for the **IBM SkillsBuild AI Automation and Intelligent Solutions internship**. By bridging the gap between surplus-rich environments and food-insecure communities, we turn potential waste into vital nutrition.
+ShareBite AI Rescue Assistant is an upgraded, intelligent food rescue ecosystem. By bridging the gap between surplus-rich environments and food-insecure communities, we turn potential waste into vital nutrition.
 
 > *"Every Action Counts. Hunger is Solvable. From reducing your own food waste to advocating for fair agricultural trade policies — individuals, communities, and governments all have a role to play in achieving Zero Hunger by 2030."*
 
