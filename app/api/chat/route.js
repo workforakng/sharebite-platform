@@ -1,6 +1,8 @@
 import { callAI } from '../../../lib/ai';
 import { SHAREBITE_SOUL } from '../../../lib/soul';
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../auth/[...nextauth]/route';
 
 // Simple in-memory rate limiter
 const rateLimitMap = new Map();
@@ -8,9 +10,12 @@ const RATE_LIMIT = 3;
 
 export async function POST(req) {
   try {
+    const session = await getServerSession(authOptions);
+    const isLoggedIn = !!session;
+
     const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
     
-    if (ip !== "unknown") {
+    if (!isLoggedIn && ip !== "unknown") {
       const currentUsage = rateLimitMap.get(ip) || 0;
       if (currentUsage >= RATE_LIMIT) {
         return NextResponse.json(
