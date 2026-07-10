@@ -2,6 +2,7 @@ import { Inter, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 import AuthProvider from "./components/AuthProvider";
 import Navbar from "./components/Navbar";
+import GlobalChatAssistant from "./components/GlobalChatAssistant";
 import Link from "next/link";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -61,6 +62,7 @@ export default function RootLayout({ children }) {
                 </div>
               </div>
             </footer>
+            <GlobalChatAssistant />
           </div>
         </AuthProvider>
       </body>
