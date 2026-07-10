@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { MapPin, Clock, Package, User, CheckCircle2, Navigation, Edit2, Trash2, X, ShieldAlert } from 'lucide-react';
+import { MapPin, Clock, Package, User, CheckCircle2, Navigation, Edit2, Trash2, X, ShieldAlert, Sparkles, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Dashboard() {
@@ -15,6 +15,12 @@ export default function Dashboard() {
   // Rescue confirmation state
   const [showRescueModal, setShowRescueModal] = useState(null); // stores donation ID
   const [qualityChecked, setQualityChecked] = useState(false);
+
+  // AI Assist state
+  const [aiPanelListing, setAiPanelListing] = useState(null);
+  const [aiResult, setAiResult] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiQuestion, setAiQuestion] = useState("");
 
   const isAdmin = session?.user?.role === 'ADMIN';
 
@@ -70,6 +76,23 @@ export default function Dashboard() {
       loadDonations();
     }
     setUpdating(false);
+  };
+
+  const handleAIAction = async (action, payload) => {
+    setAiLoading(true);
+    setAiResult(null);
+    try {
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, payload })
+      });
+      const data = await res.json();
+      setAiResult(JSON.stringify(data, null, 2));
+    } catch(err) {
+      setAiResult(`Error: ${err.message}`);
+    }
+    setAiLoading(false);
   };
 
   const filtered = donations.filter(d => {
@@ -172,14 +195,21 @@ export default function Dashboard() {
                 )}
 
                 {(session?.user?.id === d.donorId || isAdmin) && d.status === 'AVAILABLE' && (
-                  <div className="flex gap-2 w-full">
+                  <div className="flex flex-col gap-2 w-full">
+                    <div className="flex gap-2 w-full">
+                      <button 
+                        onClick={() => setEditingDonation({...d, expires: new Date(d.expires).toISOString().slice(0, 16)})} 
+                        className="flex-grow flex items-center justify-center gap-2 bg-[#f5f2eb] text-[#27210f] border border-[#ccc5b2] py-4 rounded-2xl font-bold hover:bg-white transition-all shadow-sm">
+                          <Edit2 className="w-5 h-5" /> Edit
+                      </button>
+                      <button onClick={() => handleStatus(d.id, 'CANCELLED')} className="p-4 rounded-2xl bg-white text-[#c44a1a] border border-[#f0d5c8] hover:bg-[#f0d5c8] transition-all">
+                          <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
                     <button 
-                      onClick={() => setEditingDonation({...d, expires: new Date(d.expires).toISOString().slice(0, 16)})} 
-                      className="flex-grow flex items-center justify-center gap-2 bg-[#f5f2eb] text-[#27210f] border border-[#ccc5b2] py-4 rounded-2xl font-bold hover:bg-white transition-all shadow-sm">
-                        <Edit2 className="w-5 h-5" /> Edit
-                    </button>
-                    <button onClick={() => handleStatus(d.id, 'CANCELLED')} className="p-4 rounded-2xl bg-white text-[#c44a1a] border border-[#f0d5c8] hover:bg-[#f0d5c8] transition-all">
-                        <Trash2 className="w-5 h-5" />
+                      onClick={() => setAiPanelListing(d)} 
+                      className="flex items-center justify-center gap-2 bg-[#f0edff] text-[#553db0] py-3 rounded-2xl font-bold hover:bg-[#e0d9fc] transition-all shadow-sm w-full mt-1 border border-[#d1c8f8]">
+                        <Sparkles className="w-5 h-5" /> AI Assist
                     </button>
                   </div>
                 )}
@@ -276,6 +306,57 @@ export default function Dashboard() {
               </form>
            </div>
         </div>
+      )}
+
+      {/* --- AI ASSIST MODAL --- */}
+      {aiPanelListing && (
+         <div className="fixed inset-0 bg-[#1c1a16]/80 backdrop-blur-md z-[120] flex items-center justify-center p-4">
+            <div className="bg-white rounded-[2.5rem] w-full max-w-2xl p-8 shadow-2xl border border-[#ede9df] animate-in zoom-in duration-200 relative max-h-[90vh] overflow-y-auto">
+               <button onClick={() => {setAiPanelListing(null); setAiResult(null); setAiQuestion("");}} className="absolute top-6 right-6 p-2 hover:bg-[#f5f2eb] rounded-full transition-colors">
+                  <X className="w-6 h-6 text-[#a89f88]" />
+               </button>
+               <h3 className="text-3xl font-serif font-bold text-[#27210f] mb-2 flex items-center gap-3">
+                  <Sparkles className="text-[#6d51c7]" /> AI Rescue Assistant
+               </h3>
+               <p className="text-[#6b6248] mb-6">Target Listing: <strong>{aiPanelListing.title}</strong></p>
+
+               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+                  <button onClick={() => handleAIAction('classify', aiPanelListing)} className="bg-[#f0edff] text-[#553db0] font-semibold py-2 px-4 rounded-xl hover:bg-[#e0d9fc] text-sm transition-colors">Classify Listing</button>
+                  <button onClick={() => handleAIAction('suggest_expiry', aiPanelListing)} className="bg-[#f0edff] text-[#553db0] font-semibold py-2 px-4 rounded-xl hover:bg-[#e0d9fc] text-sm transition-colors">Suggest Expiry</button>
+                  <button onClick={() => handleAIAction('find_match', aiPanelListing)} className="bg-[#f0edff] text-[#553db0] font-semibold py-2 px-4 rounded-xl hover:bg-[#e0d9fc] text-sm transition-colors">Find Best Rescuer</button>
+                  <button onClick={() => handleAIAction('generate_summary', { ...aiPanelListing, donorName: session?.user?.name })} className="bg-[#f0edff] text-[#553db0] font-semibold py-2 px-4 rounded-xl hover:bg-[#e0d9fc] text-sm transition-colors">Rescue Summary</button>
+                  {isAdmin && (
+                    <button onClick={() => handleAIAction('admin_flagging', aiPanelListing)} className="bg-[#ffe8e8] text-[#c92a2a] font-semibold py-2 px-4 rounded-xl hover:bg-[#ffc9c9] text-sm transition-colors">Admin Flagging</button>
+                  )}
+                  {isAdmin && (
+                    <button onClick={() => handleAIAction('alert_automation', aiPanelListing)} className="bg-[#fff3e0] text-[#e67700] font-semibold py-2 px-4 rounded-xl hover:bg-[#ffe8cc] text-sm transition-colors">Alert Automation</button>
+                  )}
+               </div>
+
+               <div className="mb-6 flex gap-2">
+                 <input type="text" placeholder="Ask ShareBite AI a question..." value={aiQuestion} onChange={(e) => setAiQuestion(e.target.value)} className="flex-1 border border-[#ccc5b2] p-3 rounded-xl focus:border-[#6d51c7] outline-none" />
+                 <button onClick={() => handleAIAction('ask_assistant', { question: aiQuestion })} className="bg-[#27210f] text-white px-5 rounded-xl font-bold hover:bg-[#6d51c7] transition-colors flex items-center justify-center"><MessageSquare className="w-5 h-5" /></button>
+               </div>
+               
+               {isAdmin && (
+                 <div className="mb-6">
+                   <button onClick={() => handleAIAction('analytics_helper', { data: `Listings: ${donations.length}, Claims: ${donations.filter(d => d.status === 'CLAIMED').length}` })} className="w-full bg-[#f8f9fa] border border-[#e9ecef] text-[#495057] font-semibold py-2 rounded-xl hover:bg-[#e9ecef] transition-colors">View Analytics Helper (Admin)</button>
+                 </div>
+               )}
+
+               <div className="bg-[#1c1a16] rounded-2xl p-6 min-h-[150px] relative overflow-hidden">
+                  {aiLoading ? (
+                    <div className="absolute inset-0 flex items-center justify-center bg-[#1c1a16]">
+                      <div className="inline-block h-6 w-6 animate-spin rounded-full border-2 border-solid border-[#6d51c7] border-r-transparent"></div>
+                    </div>
+                  ) : aiResult ? (
+                    <pre className="text-[#a5d8ff] font-mono text-sm whitespace-pre-wrap">{aiResult}</pre>
+                  ) : (
+                    <p className="text-[#868e96] italic text-center mt-8">Select an action above to see AI output.</p>
+                  )}
+               </div>
+            </div>
+         </div>
       )}
     </div>
   );
