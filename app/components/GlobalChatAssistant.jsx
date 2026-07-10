@@ -88,8 +88,8 @@ export default function GlobalChatAssistant() {
           {/* Messages */}
           <div className="flex-grow p-4 overflow-y-auto bg-gray-50 flex flex-col gap-3">
             {messages.map((msg, i) => (
-              <div key={i} className={\`flex \${msg.role === "user" ? "justify-end" : "justify-start"}\`}>
-                <div className={\`max-w-[80%] p-3 rounded-2xl text-sm \${msg.role === "user" ? "bg-[#4a6741] text-white rounded-br-sm" : "bg-white text-gray-800 border border-gray-200 rounded-bl-sm shadow-sm"}\`}>
+              <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.role === "user" ? "bg-[#4a6741] text-white rounded-br-sm" : "bg-white text-gray-800 border border-gray-200 rounded-bl-sm shadow-sm"}`}>
                   {msg.content}
                 </div>
               </div>
