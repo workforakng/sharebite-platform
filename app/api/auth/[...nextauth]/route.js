@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
 import { prisma } from "../../../../lib/prisma";
 import bcrypt from "bcryptjs";
 
@@ -17,19 +18,68 @@ export const authOptions = {
         if (!user) return null;
         const passwordsMatch = await bcrypt.compare(credentials.password, user.password);
         if (!passwordsMatch) return null;
-        return { id: user.id, name: user.name, email: user.email, role: user.role };
+        return { id: user.id, name: user.name, email: user.email, role: user.role, authProvider: user.authProvider };
+      }
+    }),
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      authorization: {
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code"
+        }
       }
     })
   ],
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) { token.id = user.id; token.role = user.role; }
+    async signIn({ user, account, profile }) {
+      if (account?.provider === "google") {
+        // Check if user exists
+        const existingUser = await prisma.user.findUnique({ where: { email: user.email } });
+        if (!existingUser) {
+          // New Google user - they need to select a role
+          // We'll redirect to /select-role after sign in
+          return true;
+        }
+        // Existing user - check if they have a role
+        if (!existingUser.role) {
+          return true; // Will redirect to role selection
+        }
+      }
+      return true;
+    },
+    async jwt({ token, user, account, profile }) {
+      if (user) { 
+        token.id = user.id; 
+        token.role = user.role; 
+        token.authProvider = user.authProvider;
+      }
+      if (account?.provider === "google" && profile) {
+        // Find user by email to get their role
+        const dbUser = await prisma.user.findUnique({ where: { email: profile.email } });
+        if (dbUser) {
+          token.id = dbUser.id;
+          token.role = dbUser.role;
+          token.authProvider = dbUser.authProvider;
+        }
+      }
       return token;
     },
     async session({ session, token }) {
-      if (session.user) { session.user.id = token.id; session.user.role = token.role; }
+      if (session.user) { 
+        session.user.id = token.id; 
+        session.user.role = token.role; 
+        session.user.authProvider = token.authProvider;
+      }
       return session;
     }
+  },
+  pages: {
+    signIn: "/login",
+    error: "/login",
+    newUser: "/select-role" // Redirect new users (including Google) to role selection
   },
   session: { strategy: "jwt" },
   secret: process.env.NEXTAUTH_SECRET || "development_secret_key"

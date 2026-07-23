@@ -8,15 +8,16 @@ datasource db {
 }
 
 model User {
-  id        String     @id @default(cuid())
-  name      String
-  email     String     @unique
-  password  String
-  role      Role       @default(DONOR)
-  phone     String?
-  createdAt DateTime   @default(now())
-  donations Donation[] @relation("DonorDonations")
-  claims    Donation[] @relation("ClaimedDonations")
+  id            String     @id @default(cuid())
+  name          String
+  email         String     @unique
+  password      String?
+  role          Role?      @default(DONOR)
+  authProvider  String?    @default("credentials")
+  phone         String?
+  createdAt     DateTime   @default(now())
+  donations     Donation[] @relation("DonorDonations")
+  claims        Donation[] @relation("ClaimedDonations")
 }
 
 model Donation {
