@@ -39,8 +39,17 @@ export const authOptions = {
         // Check if user exists
         const existingUser = await prisma.user.findUnique({ where: { email: user.email } });
         if (!existingUser) {
-          // New Google user - they need to select a role
-          // We'll redirect to /select-role after sign in
+          // New Google user - create them in database with no role yet
+          await prisma.user.create({
+            data: {
+              email: user.email,
+              name: user.name,
+              authProvider: 'google',
+              password: null, // No password for Google users
+              role: null // Will be set on /select-role page
+            }
+          });
+          // Redirect to /select-role after sign in
           return true;
         }
         // Existing user - check if they have a role
