@@ -2,6 +2,8 @@ import { prisma } from '../../../lib/prisma';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '../auth/[...nextauth]/route';
+import { NGOMatchingAgent } from '../../../lib/ngo-matching-agent';
+import { getCoordinatesFromLocation } from '../../../lib/geo';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,20 +24,35 @@ export async function POST(req) {
   if (session.user.role !== 'DONOR') return NextResponse.json({ error: 'Only donors can create donations' }, { status: 403 });
 
   const body = await req.json();
-  const { title, type, quantity, expires, pickupStart, pickupEnd, location, notes } = body;
+  const { title, type, quantity, foodType, expires, pickupStart, pickupEnd, location, notes, latitude, longitude } = body;
+
+  // Get coordinates from location if not provided
+  let coords = { latitude, longitude };
+  if (!latitude || !longitude) {
+    coords = await getCoordinatesFromLocation(location);
+  }
 
   const donation = await prisma.donation.create({
     data: {
       title,
       type,
       quantity,
+      foodType: foodType || 'NON_PERISHABLE',
       expires: new Date(expires),
       pickupStart: pickupStart ? new Date(pickupStart) : null,
       pickupEnd: pickupEnd ? new Date(pickupEnd) : null,
       location,
+      latitude: coords.latitude,
+      longitude: coords.longitude,
       notes: notes || null,
       donorId: session.user.id
     }
+  });
+
+  // Trigger AI matching and notification (async, don't wait)
+  // Fire and forget - don't block the response
+  NGOMatchingAgent.processNewDonation(donation).catch(err => {
+    console.error('AI matching failed:', err);
   });
 
   return NextResponse.json(donation, { status: 201 });
