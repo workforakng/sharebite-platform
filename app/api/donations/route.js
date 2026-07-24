@@ -11,7 +11,15 @@ export async function GET() {
   const donations = await prisma.donation.findMany({
     include: {
       donor: { select: { name: true, email: true } },
-      claimer: { select: { name: true, email: true } }
+      matches: {
+        include: {
+          ngo: {
+            include: {
+              user: { select: { name: true, email: true } }
+            }
+          }
+        }
+      }
     },
     orderBy: { createdAt: 'desc' }
   });
@@ -36,16 +44,17 @@ export async function POST(req) {
     data: {
       title,
       type,
-      quantity,
+      quantity: parseInt(quantity),
       foodType: foodType || 'NON_PERISHABLE',
-      expires: new Date(expires),
+      expiryDate: new Date(expires),
       pickupStart: pickupStart ? new Date(pickupStart) : null,
       pickupEnd: pickupEnd ? new Date(pickupEnd) : null,
-      location,
+      address: location,
       latitude: coords.latitude,
       longitude: coords.longitude,
-      notes: notes || null,
-      donorId: session.user.id
+      description: notes || null,
+      donorId: session.user.id,
+      status: 'PENDING'
     }
   });
 

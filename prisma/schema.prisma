@@ -47,9 +47,13 @@ model Donation {
   id              String        @id @default(cuid())
   donorId         String
   donor           User          @relation(fields: [donorId], references: [id], onDelete: Cascade)
+  title           String
+  type            String
   foodType        String
   quantity        Int
   expiryDate      DateTime
+  pickupStart     DateTime?
+  pickupEnd       DateTime?
   latitude        Float
   longitude       Float
   address         String
