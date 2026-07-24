@@ -10,13 +10,13 @@ export const authOptions = {
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "text" },
-        password: { label: "Password", type: "password" }
+        passwordHash: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+        if (!credentials?.email || !credentials?.passwordHash) return null;
         const user = await prisma.user.findUnique({ where: { email: credentials.email } });
         if (!user) return null;
-        const passwordsMatch = await bcrypt.compare(credentials.password, user.password);
+        const passwordsMatch = await bcrypt.compare(credentials.passwordHash, user.passwordHash);
         if (!passwordsMatch) return null;
         return { id: user.id, name: user.name, email: user.email, role: user.role, authProvider: user.authProvider };
       }
@@ -45,7 +45,7 @@ export const authOptions = {
               email: user.email,
               name: user.name,
               authProvider: 'google',
-              password: null, // No password for Google users
+              passwordHash: null, // No password for Google users
               role: null // Will be set on /select-role page
             }
           });
@@ -60,9 +60,9 @@ export const authOptions = {
       return true;
     },
     async jwt({ token, user, account, profile }) {
-      if (user) { 
-        token.id = user.id; 
-        token.role = user.role; 
+      if (user) {
+        token.id = user.id;
+        token.role = user.role;
         token.authProvider = user.authProvider;
       }
       if (account?.provider === "google" && profile) {
